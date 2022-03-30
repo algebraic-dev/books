@@ -9,6 +9,7 @@ inductive ℕ : Type where
 
 theorem seven : ℕ := ℕ.s (ℕ.s (ℕ.s (ℕ.s (ℕ.s (ℕ.s (ℕ.s ℕ.z)))))) 
 
+
 -- Some cool definitions to make it easier to work with this new
 -- data type
 

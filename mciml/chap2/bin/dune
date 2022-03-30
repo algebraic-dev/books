@@ -1,0 +1,6 @@
+(executable
+ (public_name modern)
+ (name main)
+ (preprocess (pps ppx_deriving.show ppx_deriving.ord)))
+
+(ocamllex lexer)
