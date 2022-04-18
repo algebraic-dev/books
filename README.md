@@ -2,8 +2,8 @@
 
 ## Modern Compiler Implementation in ML
 - [x] 1 - Introduction
-- [ ] 2 - Lexical Analysis
-- [ ] 3 - Parsing
+- [x] 2 - Lexical Analysis
+- [x] 3 - Parsing
 - [ ] 4 - Abstract Syntax
 - [ ] 5 - ...
 
@@ -25,7 +25,7 @@
 - [x] 8 - Quantifiers
 - [x] 9 - Decidable
 - [x] 10 - Lists
-- [ ] 11 - Lambda
+- [x] 11 - Lambda
 - [ ] 12 - Properties
 - [ ] 13 - DeBruijn
 - [ ] 14 - More
