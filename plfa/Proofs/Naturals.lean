@@ -136,7 +136,10 @@ theorem Nt.Mul.rightId : ∀ (m : ℕ), m * ℕ.s 0 = m
 
 theorem Nt.Mul.comm :  ∀ (m n : ℕ), m * n = n * m
   | 0  ,   n => Eq.symm (Nt.Mul.rightNeutral n) 
-  | ℕ.s m, n => by rw [Nt.Mul.sucRight, Nt.Mul.sucLeft, Nt.Add.comm, comm]
+  | ℕ.s m, n => by rw [Nt.Mul.sucRight, Nt.Mul.sucLeft, Nt.Add.comm, comm m n]
+
+termination_by 
+  Nt.Mul.comm m _ => sizeOf m
 
 -- Binary 
 
@@ -145,10 +148,15 @@ theorem Bin.incEqNatSuc : ∀ (b : 𝔹), Bin.toNat (Bin.inc b) = ℕ.s (Bin.toN
   | 𝔹.zero n => by simp [Bin.toNat]; rw [Nt.Add.comm]; rfl
   | 𝔹.one n => by 
     simp [Bin.toNat]
-    rw [Nt.Add.comm, incEqNatSuc, Nt.Mul.sucLeft]
+    rw [Nt.Add.comm, incEqNatSuc n, Nt.Mul.sucLeft]
     rfl
+
+termination_by 
+  Bin.incEqNatSuc t => sizeOf t
 
 theorem Bin.eqNat : ∀ (n : ℕ), Bin.toNat (Nat.toBin n) = n 
   | 0     => rfl
-  | ℕ.s n => by simp [Nat.toBin]; rw [Bin.incEqNatSuc, eqNat]; 
+  | ℕ.s n => by simp [Nat.toBin]; rw [Bin.incEqNatSuc, eqNat n]; 
 
+termination_by 
+  Bin.eqNat t => sizeOf t
