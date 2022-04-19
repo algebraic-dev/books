@@ -70,7 +70,7 @@ mutual
 end
 
 termination_by
-  boundSubs f => (sizeOf f, 1)
+  boundSubs f     => (sizeOf f, 1)
   substitute expr => (sizeOf expr, 0)
 
 notation:72 x "[" from_ ":=" to_ "]" => substitute from_ to_ x
