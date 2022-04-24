@@ -15,6 +15,7 @@ def Set.compl  (a: Set α)            : Set α := { x | x ∉ a}
 
 def Set.bigUnion (a: Set (Set α)) : Set α := { x | ∃(y: Set α), x ∈ y ∧ y ∈ a }
 
+notation:64 "⬝∅" => {x | False}
 prefix:64 "⋃." => Set.bigUnion
 infix:64 "⊆" => Set.subset
 infix:65 "∪" => Set.union
@@ -27,6 +28,8 @@ def Set.prod (a: Set α) (b: Set β) : Set (α × β) := { (x, y) | x ∈ a ∧ 
 def Set.fun  (a: Set α) (b: Set β) : Set (α × β) := { (x, y) | x ∈ a ∧ y ∈ b}
 
 infix:67 "`×" => Set.prod
+
+theorem Set.Eq (h₁: p ⊆ q) (h₂: q ⊆ p): (p = q) := (funext (λ x => propext (Iff.intro (h₁ x) (h₂ x))))
 
 theorem Set.Compl.InterEq {a b: Set α} : a – b = a ∩ ⬝~b := by
   simp [Set.in, Set.diff, Set.inter, Set.compl]
