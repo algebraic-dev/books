@@ -42,6 +42,8 @@ def Dfa.extendedProgram : Dfa σ n → Fin n → List σ → Fin n
   | dfa, q, []        => q
   | dfa, q, (x :: xs) => extendedProgram dfa (dfa.program q x) xs
 
+-- It is accepted if the final state is part of the DFA final set
+-- 
 structure Dfa.Accepts (lang: List σ) (dfa: Dfa σ n) where
   proof : (Dfa.extendedProgram dfa dfa.state lang) ∈ dfa.final
 
@@ -151,7 +153,6 @@ def Nfa.Nfa_ε : Nfa σ 2 := { state := 0, program := λ _ _ => Nfa.Nfa_ε.End, 
 
 def Nfa.Nfa_ε.initial: ∀ {σ: Type}, Set (Fin 2) | x => {y | y = (@Nfa.state x 2 Nfa.Nfa_ε)}
 
-
 theorem Nfa.Nfa_ε.EverythingLeadToEnd : ∀ {q: (Fin 2)} {x: σ}, (Nfa.Nfa_ε.program q x) = Nfa.Nfa_ε.End := by simp; rfl
 
 theorem Nfa.Nfa_ε.EverythingToFinal : ∀ {xs: List σ}, (Nfa.extendedProgram Nfa.Nfa_ε Nfa.Nfa_ε.End xs) = Nfa.Nfa_ε.End
@@ -239,3 +240,6 @@ def toNFA : ∀ (s: List σ), (r: Regex σ) → ∃ (n : Nat), ∃ (e: Nfa σ n)
   | s, Regex.star a    => sorry
   | s, Regex.conc a b  => sorry
   | s, Regex.alt a b   => sorry
+
+-- Pumping lemma
+-- Assume q₀ as the initial state and qf the final state, then
