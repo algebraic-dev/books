@@ -1,5 +1,26 @@
 {
     open Tokens
+
+    let match_id id =
+        match id with
+        | "function"  -> KwFunction
+        | "import"    -> KwImport
+        | "primitive" -> KwPrimitive
+        | "type"      -> KwType
+        | "array"     -> KwArray
+        | "if"        -> KwIf
+        | "then"      -> KwThen
+        | "else"      -> KwElse
+        | "let"       -> KwLet
+        | "in"        -> KwIn
+        | "effect"    -> KwEffect
+        | "perform"   -> KwPerform
+        | "end"       -> KwEnd
+        | "of"        -> KwOf
+        | "nil"       -> KwNil
+        | "var"       -> KwVar
+        | id          -> TId id
+
 }
 
 let digit = ['0'-'9']
@@ -30,31 +51,12 @@ rule lex = parse
     | "&"            { And }
     | "|"            { Or }
     | ":="           { ColonEq }
-    | id as id      {
-        match id with
-        | "function"  -> KwFunction
-        | "import"    -> KwImport
-        | "primitive" -> KwPrimitive
-        | "type"    -> KwType
-        | "array"   -> KwArray
-        | "if"      -> KwIf
-        | "then"    -> KwThen
-        | "else"    -> KwElse
-        | "let"     -> KwLet
-        | "in"      -> KwIn
-        | "effect"  -> KwEffect
-        | "perform" -> KwPerform
-        | "end"     -> KwEnd
-        | "of"      -> KwOf
-        | "nil"     -> KwNil
-        | "var"     -> KwVar
-        | id        -> TId id
-    }
-    | "/*"          { comment 0 lexbuf }
-    | '"'           { str (Buffer.create 1) lexbuf }
-    | " "+          { lex lexbuf }
-    | ['\n' '\r']+  { lex lexbuf }
-    | eof           { Eof }
+    | id as id       { match_id id }
+    | "/*"           { comment 0 lexbuf }
+    | '"'            { str (Buffer.create 1) lexbuf }
+    | " "+           { lex lexbuf }
+    | ['\n' '\r']+   { lex lexbuf }
+    | eof            { Eof }
 
 
 and str buf = parse

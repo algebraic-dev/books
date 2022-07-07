@@ -42,40 +42,41 @@ decl:
     | fundec  { FunDec $1 }
     | ef_decl { EfDec $1 }
 
-ty_id:
-    | TId { $1 }
+ident:
+    | TId { ($1, $loc) }
+
 
 ty_field:
-    | TId Colon ty_id { { id = $1; ty = $3 }}
+    | ident Colon ident { { id = $1; ty = $3 }}
 ty:
-    | ty_id { TySimple $1 }
-    | LBracket separated_list(Comma, ty_field) RBracket  { TyRecord $2 }
-    | KwArray KwOf ty_id { TyArray $3 }
+    | ident { TySimple ($1, $loc) }
+    | LBracket separated_list(Comma, ty_field) RBracket  { TyRecord ($2, $loc) }
+    | KwArray KwOf ident { TyArray ($3, $loc) }
 
 tydec:
-    | KwType TId Eq ty { { ident = $2; body = $4 } }
+    | KwType ident Eq ty { { ident = $2; body = $4; dec_loc = $loc } }
 
 
 ef_field:
-    | TId LPar separated_list(Comma, ty_id) RPar Colon ty_id { { ef_ident = $1; ef_args = $3; ef_body = $6 }}
+    | ident LPar separated_list(Comma, ident) RPar Colon ident { { ef_ident = $1; ef_args = $3; ef_body = $6; ef_loc = $loc }}
 
-ef_decl: 
-    | TwEffect TId LBracket separated_list(Comma, ef_field) RBracket { {e_name = $2; e_fields = $4} }
+ef_decl:
+    | TwEffect ident LBracket separated_list(Comma, ef_field) RBracket { {e_name = $2; e_fields = $4; e_loc = $loc} }
 
 (* VarDec *)
 
 binder:
-    | TId Colon ty_id { Typed ($1, $3) }
-    | TId { Raw $1 }
+    | ident Colon ident { Typed ($1, $3, $loc) }
+    | ident { Raw ($1, $loc) }
 
 vardec:
-    | KwVar binder ColonEq expr { { binder = $2; exp = Hole "?"} }
+    | KwVar binder ColonEq expr { { var_binder = $2; var_exp = $4; var_loc = $loc } }
 
 (* FunDec *)
 
 fundec:
-    | KwFunction TId LPar separated_list(Comma, ty_field) RPar option(Colon ty_id {$2}) Eq expr 
-        { { fn_name = $2; fn_args = $4; fn_ret = $6; fn_body = $8 } }
+    | KwFunction ident LPar separated_list(Comma, ty_field) RPar option(Colon ident {$2}) Eq expr
+        { { fn_name = $2; fn_args = $4; fn_ret = $6; fn_body = $8; fn_loc = $loc } }
 
 (* Expr *)
 
@@ -87,47 +88,47 @@ opt(rule):
      }
 
 l_value:
-    | TId { Id $1 }
-    | l_value Dot TId { Field ($1, $3) }
-    | l_value LBrace expr RBrace { ArrayIdx ($1, $3) }
+    | ident                      { Id $1 }
+    | l_value Dot ident          { Field ($1, $3, $loc) }
+    | l_value LBrace expr RBrace { ArrayIdx ($1, $3, $loc) }
 
 
 %inline op:
-    | Plus { Plus }
-    | Minus { Minus }
-    | Slash { Div }
-    | Star { Mul }
-    | Greater { Greater }
-    | GreaterEq { GreaterEq }
-    | Less { Less }
-    | LessEq { LessEq }
-    | And { And }
-    | Or { Or }
-    | AndAnd { BinAnd }
-    | OrOr { BinOr }
-    | Hat { BinXor }
-    | EqEq { EqEq }
+    | Plus        { Plus }
+    | Minus       { Minus }
+    | Slash       { Div }
+    | Star        { Mul }
+    | Greater     { Greater }
+    | GreaterEq   { GreaterEq }
+    | Less        { Less }
+    | LessEq      { LessEq }
+    | And         { And }
+    | Or          { Or }
+    | AndAnd      { BinAnd }
+    | OrOr        { BinOr }
+    | Hat         { BinXor }
+    | EqEq        { EqEq }
     | LessGreater { Diff }
 
 field:
-    | TId Eq expr { { efid = $1; efty = $3 } }
+    | ident Eq expr { { eff_id = $1; eff_ty = $3; eff_loc = $loc } }
 
 expr:
-    | LPar opt(expr) RPar { $2 }
-    | l_value             { LVal $1 }
-    | l_value ColonEq expr { Set ($1, $3) }
-    | KwNil               { Nil }
-    | TStr                { Str $1 }
-    | TNum                { Int $1 }
-    | Minus expr %prec UMinus { Neg $2 }
-    | TId LPar separated_list(Comma, expr) RPar { Apply ($1, $3) }
-    | expr op expr { Bin ($2,$1,$3) }
-    | expr Semi expr { Seq ($1,$3) }
-    | ty_id LBracket separated_list(Comma, field) RBracket { Record ($1, $3) }
-    | LBrace separated_list(Comma, expr) RBrace { Array $2 }
-    | KwIf expr KwThen expr KwElse expr { If ($2, $4, Some $6) }
-    | KwIf expr KwThen expr { If ($2, $4, None) }
-    | KwLet entry KwIn expr KwEnd { Let ($2, $4)}
-    | KwWhile expr KwDo expr KwEnd { While ($2, $4) }
-    | KwBreak { Break }
-    | KwPerform TId LPar separated_list(Comma, expr) RPar { Perform ($2, $4) }
+    | l_value                                              { LVal $1 }
+    | l_value ColonEq expr                                 { Set ($1, $3, $loc) }
+    | expr op expr                                         { Bin ($2,$1,$3, $loc) }
+    | expr Semi expr                                       { Seq ($1,$3, $loc) }
+    | ident LBracket separated_list(Comma, field) RBracket { Record ($1, $3, $loc) }
+    | LPar opt(expr) RPar                                  { $2 }
+    | KwNil                                                { Nil $loc }
+    | TStr                                                 { Str ($1, $loc) }
+    | TNum                                                 { Int ($1, $loc) }
+    | Minus expr %prec UMinus                              { Neg $2 }
+    | ident LPar separated_list(Comma, expr) RPar          { Apply ($1, $3, $loc) }
+    | LBrace separated_list(Comma, expr) RBrace            { Array ($2, $loc) }
+    | KwIf expr KwThen expr KwElse expr                    { If ($2, $4, Some $6, $loc) }
+    | KwIf expr KwThen expr                                { If ($2, $4, None, $loc) }
+    | KwLet entry KwIn expr KwEnd                          { Let ($2, $4, $loc)}
+    | KwWhile expr KwDo expr KwEnd                         { While ($2, $4, $loc) }
+    | KwBreak                                              { Break $loc }
+    | KwPerform ident LPar separated_list(Comma, expr) RPar { Perform ($2, $4, $loc) }
