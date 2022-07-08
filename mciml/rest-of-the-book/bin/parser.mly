@@ -7,7 +7,7 @@
 %token <string> TStr
 
 %token KwType KwArray KwIf KwThen KwElse KwWhile
-%token KwDo KwLet KwIn KwEnd KwOf TwEffect KwPerform
+%token KwDo KwLet KwIn KwEnd KwOf KwEffect KwPerform KwFor KwTo
 %token KwBreak KwNil KwFunction KwVar KwImport KwPrimitive
 
 %token Eq EqEq Comma Colon Semi LPar RPar LBracket RBracket
@@ -16,11 +16,11 @@
 
 %token Eof
 
-%start <decl list> entry
+%start <expr> entry
 
-%nonassoc ColonEq
+%nonassoc ColonEq KwDo KwOf
 %left And Or
-%nonassoc Greater GreaterEq Less LessEq LessGreater EqEq
+%nonassoc Greater GreaterEq Less LessEq LessGreater Eq
 %left AndAnd OrOr Hat
 %left Plus Minus
 %left Slash Star
@@ -33,8 +33,7 @@
 %%
 
 entry:
-    | decl entry { $1 :: $2 }
-    | Eof { [] }
+    | expr Eof { $1 }
 
 decl:
     | tydec   { TyDec $1  }
@@ -49,9 +48,9 @@ ident:
 ty_field:
     | ident Colon ident { { id = $1; ty = $3 }}
 ty:
-    | ident { TySimple ($1, $loc) }
+    | ident { TySimple $1 }
     | LBracket separated_list(Comma, ty_field) RBracket  { TyRecord ($2, $loc) }
-    | KwArray KwOf ident { TyArray ($3, $loc) }
+    | KwArray KwOf ident { TyArray $3 }
 
 tydec:
     | KwType ident Eq ty { { ident = $2; body = $4; dec_loc = $loc } }
@@ -61,13 +60,13 @@ ef_field:
     | ident LPar separated_list(Comma, ident) RPar Colon ident { { ef_ident = $1; ef_args = $3; ef_body = $6; ef_loc = $loc }}
 
 ef_decl:
-    | TwEffect ident LBracket separated_list(Comma, ef_field) RBracket { {e_name = $2; e_fields = $4; e_loc = $loc} }
+    | KwEffect ident LBracket separated_list(Comma, ef_field) RBracket { {e_name = $2; e_fields = $4; e_loc = $loc} }
 
 (* VarDec *)
 
 binder:
     | ident Colon ident { Typed ($1, $3, $loc) }
-    | ident { Raw ($1, $loc) }
+    | ident { Raw $1 }
 
 vardec:
     | KwVar binder ColonEq expr { { var_binder = $2; var_exp = $4; var_loc = $loc } }
@@ -107,28 +106,33 @@ l_value:
     | AndAnd      { BinAnd }
     | OrOr        { BinOr }
     | Hat         { BinXor }
-    | EqEq        { EqEq }
+    | Eq          { Eq }
     | LessGreater { Diff }
 
 field:
     | ident Eq expr { { eff_id = $1; eff_ty = $3; eff_loc = $loc } }
 
+entry_l:
+    | decl { [$1] }
+    | decl entry_l { $1 :: $2 }
+
 expr:
-    | l_value                                              { LVal $1 }
-    | l_value ColonEq expr                                 { Set ($1, $3, $loc) }
-    | expr op expr                                         { Bin ($2,$1,$3, $loc) }
-    | expr Semi expr                                       { Seq ($1,$3, $loc) }
-    | ident LBracket separated_list(Comma, field) RBracket { Record ($1, $3, $loc) }
-    | LPar opt(expr) RPar                                  { $2 }
-    | KwNil                                                { Nil $loc }
-    | TStr                                                 { Str ($1, $loc) }
-    | TNum                                                 { Int ($1, $loc) }
-    | Minus expr %prec UMinus                              { Neg $2 }
-    | ident LPar separated_list(Comma, expr) RPar          { Apply ($1, $3, $loc) }
-    | LBrace separated_list(Comma, expr) RBrace            { Array ($2, $loc) }
-    | KwIf expr KwThen expr KwElse expr                    { If ($2, $4, Some $6, $loc) }
-    | KwIf expr KwThen expr                                { If ($2, $4, None, $loc) }
-    | KwLet entry KwIn expr KwEnd                          { Let ($2, $4, $loc)}
-    | KwWhile expr KwDo expr KwEnd                         { While ($2, $4, $loc) }
-    | KwBreak                                              { Break $loc }
+    | ident LBrace expr RBrace KwOf expr { Array ($1, $3, $6, $loc) }
+    | l_value                                               { LVal $1 }
+    | l_value ColonEq expr                                  { Set ($1, $3, $loc) }
+    | expr op expr                                          { Bin ($2,$1,$3, $loc) }
+    | expr Semi expr                                        { Seq ($1,$3, $loc) }
+    | ident LBracket separated_list(Comma, field) RBracket  { Record ($1, $3, $loc) }
+    | LPar opt(expr) RPar                                   { $2 }
+    | KwNil                                                 { Nil $loc }
+    | TStr                                                  { Str ($1, $loc) }
+    | TNum                                                  { Int ($1, $loc) }
+    | Minus expr %prec UMinus                               { Neg $2 }
+    | ident LPar separated_list(Comma, expr) RPar           { Apply ($1, $3, $loc) }
+    | KwIf expr KwThen expr KwElse expr                     { If ($2, $4, Some $6, $loc) }
+    | KwIf expr KwThen expr                                 { If ($2, $4, None, $loc) }
+    | KwLet entry_l KwIn expr KwEnd                           { Let ($2, $4, $loc)}
+    | KwWhile expr KwDo expr KwEnd                          { While ($2, $4, $loc) }
+    | KwBreak                                               { Break $loc }
     | KwPerform ident LPar separated_list(Comma, expr) RPar { Perform ($2, $4, $loc) }
+    | KwFor ident ColonEq expr KwTo expr KwDo expr          { For ($2, $4, $6, $8)}

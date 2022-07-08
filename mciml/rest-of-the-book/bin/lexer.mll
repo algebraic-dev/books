@@ -1,5 +1,6 @@
 {
     open Tokens
+    open Lexing
 
     let match_id id =
         match id with
@@ -12,6 +13,7 @@
         | "then"      -> KwThen
         | "else"      -> KwElse
         | "let"       -> KwLet
+        | "for"       -> KwFor
         | "in"        -> KwIn
         | "effect"    -> KwEffect
         | "perform"   -> KwPerform
@@ -19,14 +21,24 @@
         | "of"        -> KwOf
         | "nil"       -> KwNil
         | "var"       -> KwVar
+        | "do"        -> KwDo
+        | "to"        -> KwTo
         | id          -> TId id
 
+    let new_line lexbuf =
+        let lcp = lexbuf.lex_curr_p in
+        lexbuf.lex_curr_p <- { lcp with
+            pos_lnum = lcp.pos_lnum + 1;
+            pos_bol = lcp.pos_cnum;
+        }
 }
 
 let digit = ['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9' '_']*
 
 rule lex = parse
+    | '\n'           { new_line lexbuf; lex lexbuf }
+    | '\r'           { lex lexbuf }
     | digit+ as num  { TNum (int_of_string num) }
     | "="            { Eq }
     | ","            { Comma }
@@ -55,7 +67,6 @@ rule lex = parse
     | "/*"           { comment 0 lexbuf }
     | '"'            { str (Buffer.create 1) lexbuf }
     | " "+           { lex lexbuf }
-    | ['\n' '\r']+   { lex lexbuf }
     | eof            { Eof }
 
 
